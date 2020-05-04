@@ -84,11 +84,13 @@ cross_flower('hyacinth 101 101')
 cross_flower('rose 2020 1010')
 
 
-cross_flower_all <- function(type, genotypes) {
+cross_flower_all <- function(input) {
   # Input any number of genotypes and generate results of all possible crosses
   # Combinations with repetitions: https://stackoverflow.com/questions/55738847/r-creating-combinations-with-replacement
-  type <- tolower(type)
-  genotypes <- unlist(strsplit(genotypes, ' '))
+  # - usage example: cross_flower_all('hyacinth 001 222')
+  input <- unlist(strsplit(input, ' ')) # split string to vector of space-separated components
+  type <- tolower(input[1]) # first element in flower type
+  genotypes <- input[-1]    # remaining elements are genotypes
   
   result <- expand.grid(genotypes, genotypes, stringsAsFactors = FALSE) %>%
     mutate(key = paste(pmin(Var1, Var2), pmax(Var1, Var2), sep = "-")) %>%
@@ -110,4 +112,4 @@ cross_flower_all <- function(type, genotypes) {
   return(result)
 }
 
-cross_flower_all('hyacinth', '001 222')
+cross_flower_all('hyacinth 001 222')
