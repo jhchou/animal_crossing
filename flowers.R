@@ -42,6 +42,8 @@ cross_flower <- function(input) {
   
   g1 <- as.numeric(unlist(strsplit(genotype1, split = ''))) # vector of the red / yellow / white / brightness genotypes for 1st
   g2 <- as.numeric(unlist(strsplit(genotype2, split = ''))) # same for 2nd
+  if((type == 'rose') & ((length(g1) != 4) | (length(g2) != 4))) { warning('Rose missing "brightness" genotype -- assuming 0', call. = FALSE) }
+  
   r1 = g1[1]
   y1 = g1[2]
   w1 = g1[3]
@@ -87,14 +89,25 @@ cross_flower_all <- function(type, genotypes) {
   # Combinations with repetitions: https://stackoverflow.com/questions/55738847/r-creating-combinations-with-replacement
   type <- tolower(type)
   genotypes <- unlist(strsplit(genotypes, ' '))
-  expand.grid(genotypes, genotypes, stringsAsFactors = FALSE) %>%
+  
+  result <- expand.grid(genotypes, genotypes, stringsAsFactors = FALSE) %>%
     mutate(key = paste(pmin(Var1, Var2), pmax(Var1, Var2), sep = "-")) %>%
     filter(!duplicated(key)) %>%
-    select(-key) %>%
-    rename(g1 = Var1, g2 = Var2) %>%
-    mutate(input = paste(type, g1, g2)) %>%
+    mutate(
+      parent1 = paste(Var1, type),
+      parent2 = paste(Var2, type)
+    ) %>%
+    left_join(data %>% select(genotype, color1 = color), by = c('parent1' = 'genotype')) %>% # color of first parent
+    left_join(data %>% select(genotype, color2 = color), by = c('parent2' = 'genotype')) %>% # color of second parent
+    mutate(
+      cross = paste0(Var1, ' (', color1, ') x ', Var2, ' (', color2, ')')
+    ) %>%
+    mutate(input = paste(type, Var1, Var2)) %>%
     mutate(output = map(input, cross_flower)) %>%
-    unnest(output)
+    unnest(output) %>%
+    select(cross, genotype, color, breedtrue, prop_cross, prop_color)
+  
+  return(result)
 }
 
-# x2 %>% left_join(data %>% filter(type == 'hyacinth') %>% select(key, color1 = color), by = c('g1' = 'key')) %>% left_join(data %>% filter(type == 'hyacinth') %>% select(key, color2 = color), by = c('g2' = 'key')) %>% View
+cross_flower_all('hyacinth', '001 222')
